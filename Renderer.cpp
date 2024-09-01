@@ -177,9 +177,9 @@ void Renderer::CreateDeviceDependentResources()
 	});
 
 	// Load the geometry, after compiling shaders
-	auto createCubeTask = createShadersTask.then([this]()
+	auto createTriangleTask = createShadersTask.then([this]()
 	{
-		CreateCube();
+		CreateTriangle();
 	});
 }
 void Renderer::CreateWindowSizeDependentResources()
@@ -492,24 +492,10 @@ void Renderer::CreateShaders()
 		return;
 	}
 }
-HRESULT Renderer::CreateCube()
+HRESULT Renderer::CreateTriangle()
 {
-	// Create cube geometry
-	/*const BaseVertexInput cubeVertices[] =
-	{
-		{ DirectX::XMFLOAT3{ -0.5f,-0.5f,-0.5f }, DirectX::XMFLOAT3{}, DirectX::XMFLOAT2{} },
-		{ DirectX::XMFLOAT3{ -0.5f,-0.5f, 0.5f }, DirectX::XMFLOAT3{}, DirectX::XMFLOAT2{} },
-		{ DirectX::XMFLOAT3{ -0.5f, 0.5f,-0.5f }, DirectX::XMFLOAT3{}, DirectX::XMFLOAT2{} },
-		{ DirectX::XMFLOAT3{ -0.5f, 0.5f, 0.5f }, DirectX::XMFLOAT3{}, DirectX::XMFLOAT2{} },
-
-		{ DirectX::XMFLOAT3{ 0.5f,-0.5f,-0.5f }, DirectX::XMFLOAT3{}, DirectX::XMFLOAT2{} },
-		{ DirectX::XMFLOAT3{ 0.5f,-0.5f, 0.5f }, DirectX::XMFLOAT3{}, DirectX::XMFLOAT2{} },
-		{ DirectX::XMFLOAT3{ 0.5f, 0.5f,-0.5f }, DirectX::XMFLOAT3{}, DirectX::XMFLOAT2{} },
-		{ DirectX::XMFLOAT3{ 0.5f, 0.5f, 0.5f }, DirectX::XMFLOAT3{}, DirectX::XMFLOAT2{} }
-	};*/
-
-	// Triangle
-	const BaseVertexInput cubeVertices[] =
+	// Create triangle geometry
+	const BaseVertexInput triangleVertices[] =
 	{
 		{ DirectX::XMFLOAT3{ -0.5f,-0.5f, 0.0f }, DirectX::XMFLOAT3{}, DirectX::XMFLOAT2{} },
 		{ DirectX::XMFLOAT3{  0.5f,-0.5f, 0.0f }, DirectX::XMFLOAT3{}, DirectX::XMFLOAT2{} },
@@ -517,11 +503,11 @@ HRESULT Renderer::CreateCube()
 	};
 
 	// Create vertexBuffer
-	const CD3D11_BUFFER_DESC vertexDescription{ sizeof(cubeVertices), D3D11_BIND_VERTEX_BUFFER};
+	const CD3D11_BUFFER_DESC vertexDescription{ sizeof(triangleVertices), D3D11_BIND_VERTEX_BUFFER};
 
 	D3D11_SUBRESOURCE_DATA vertexData;
 	ZeroMemory(&vertexData, sizeof(D3D11_SUBRESOURCE_DATA));	// Stops writes being compiled away if it isn't being read immeadiatly
-	vertexData.pSysMem = cubeVertices;							// Initialization data
+	vertexData.pSysMem = triangleVertices;						// Initialization data
 	vertexData.SysMemPitch = 0;									// Distance from beginning line of texture to the next line (only for 2D & 3D texture)
 	vertexData.SysMemSlicePitch = 0;							// Distance from beginning of one depth level to the next	(only for 3D texture)
 
@@ -539,40 +525,18 @@ HRESULT Renderer::CreateCube()
 	}
 
 	// Create indexBuffer
-	//const unsigned short cubeIndices[]
-	//{
-	//	0,2,1, // -x
-	//	1,2,3,
-
-	//	4,5,6, // +x
-	//	5,7,6,
-
-	//	0,1,5, // -y
-	//	0,5,4,
-
-	//	2,6,7, // +y
-	//	2,7,3,
-
-	//	0,4,6, // -z
-	//	0,6,2,
-
-	//	1,3,7, // +z
-	//	1,7,5
-	//};
-
-	// Triangle
-	const unsigned short cubeIndices[]
+	const unsigned short triangleIndices[]
 	{
 		0,2,1
 	};
 
-	m_IndexCount = ARRAYSIZE(cubeIndices);
+	m_IndexCount = ARRAYSIZE(triangleIndices);
 
-	const CD3D11_BUFFER_DESC indexDescription{ sizeof(cubeIndices), D3D11_BIND_INDEX_BUFFER };
+	const CD3D11_BUFFER_DESC indexDescription{ sizeof(triangleIndices), D3D11_BIND_INDEX_BUFFER };
 
 	D3D11_SUBRESOURCE_DATA indexData;
 	ZeroMemory(&indexData, sizeof(D3D11_SUBRESOURCE_DATA));
-	indexData.pSysMem = cubeIndices;
+	indexData.pSysMem = triangleIndices;
 	indexData.SysMemPitch = 0;
 	indexData.SysMemSlicePitch = 0;
 
@@ -611,15 +575,15 @@ void Renderer::CreateViewProjectionMatrix()
 	const XMFLOAT3 cameraUp{ 0.f, 1.f, 0.f };
 
 	const XMVECTOR worldPos = XMLoadFloat3(&m_CameraPos);
-	const XMVECTOR lookAtPoint = worldPos + XMLoadFloat3(&cameraForward);
+	const XMVECTOR worldForward = XMLoadFloat3(&cameraForward);
 	const XMVECTOR worldUp = XMLoadFloat3(&cameraUp);
 
-	const XMMATRIX viewMatrix = XMMatrixLookAtLH(worldPos, lookAtPoint, worldUp);
+	const XMMATRIX viewMatrix = XMMatrixLookToLH(worldPos, worldForward, worldUp);
 
 	// Create projection matrix
 	const float aspectRatioX = static_cast<float>(m_BackBufferDescription.Width) / m_BackBufferDescription.Height;
 	const float FOV{ 45.f };
-	const float nearZ{ 0.01f };
+	const float nearZ{ 0.1f };
 	const float farZ{ 100.f };
 	const XMMATRIX projectionMatrix = XMMatrixPerspectiveFovLH(XMConvertToRadians(FOV), aspectRatioX, nearZ, farZ);
 

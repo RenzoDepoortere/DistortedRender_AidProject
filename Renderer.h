@@ -80,7 +80,7 @@ private:
 	void CreateViewport();
 
 	void CreateShaders();
-	HRESULT CreateCube();
+	HRESULT CreateTriangle();
 	void CreateViewProjectionMatrix();
 };
 
